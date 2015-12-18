@@ -1,13 +1,22 @@
 import numpy as np
 import astropy.io.fits as pyfits
 from numpy.polynomial.legendre import legval, legfit
+from desispec.log import get_logger
 
 def u(wave, wavemin, wavemax) :
     return 2.*(wave-wavemin)/(wavemax-wavemin)-1.
 
+def invert_legendre_polynomial() :
+    # input = xmin,xmax,coef_of_x_to_y
+    # output = ymin,ymax,coef_of_y_to_x
+    pass
+
 ################
 #   RETURNS FITS FILE INCLUDING ELECTRONS QUANTITY
 ################
+
+
+
 
 def boxcar(psf, image_file, nfibers=None) :
     """Find and returns  wavelength  spectra and inverse variance
@@ -30,6 +39,9 @@ def boxcar(psf, image_file, nfibers=None) :
         ivar
         wavelength
         """
+    log=get_logger()
+    log.info("starting boxcar extraction")
+    
     wavemin = psf[0].header["WAVEMIN"]
     wavemax = psf[0].header["WAVEMAX"]
     xcoef   = psf[0].data
@@ -46,15 +58,20 @@ def boxcar(psf, image_file, nfibers=None) :
     mask        = (flux_ivar > 0)
     flux_var[mask] = 1./flux_ivar[mask]
 
-    #
+    # number of pixels in image 
+    # we are going to extract one flux per fiber per y pixel (total = nfibers x npix_y)
     npix_y  = flux.shape[0]
     npix_x  = flux.shape[1]
-    wave    = np.linspace(wavemin, wavemax, 10)
 
+    # wavelength array used to invert 
+    # NOT NEEDED WHEN LEGPOL INVERSION DONE IN ROUTINE
+    tmp_wave_for_inversion = np.linspace(wavemin, wavemax, 100)
+    
     nfibers_to_extract = xcoef.shape[0]
     if nfibers is not None :
         if nfibers>nfibers_to_extract :
-            print "WARNING only %d fibers will be extracted"%nfibers_to_extract
+            log.warning("only %d fibers will be extracted"%nfibers_to_extract)
+        
         nfibers_to_extract = min(nfibers,nfibers_to_extract)
     
 
@@ -70,10 +87,12 @@ def boxcar(psf, image_file, nfibers=None) :
 ###
 
     for fiber in xrange(nfibers_to_extract) :
-        print fiber
+        
+        log.info("extracting fiber #%03d"%fiber)
+        
         #   Determines value of Y, so we can know its coeficient and then its position
-        y_of_wave           = legval(u(wave, wavemin, wavemax), ycoef[fiber])
-        coef                = legfit(u(y_of_wave, 0, npix_y), wave, deg=ycoef[fiber].size)
+        y_of_wave           = legval(u(tmp_wave_for_inversion, wavemin, wavemax), ycoef[fiber])
+        coef                = legfit(u(y_of_wave, 0, npix_y),tmp_wave_for_inversion , deg=ycoef[fiber].size)
         wave_of_y[fiber]    = legval(u(np.arange(npix_y).astype(float), 0, npix_y), coef)
         #   Determines wavelength intensity (x) based on Y
         x_of_y              = legval(u(wave_of_y[fiber], wavemin, wavemax), xcoef[fiber])
@@ -92,7 +111,7 @@ def boxcar(psf, image_file, nfibers=None) :
                 spectra_ivar[fiber, y] = 1./var
         
 
-    
+    log.info("done boxcar extraction")
     return spectra,spectra_ivar,wave_of_y
 
 

@@ -27,14 +27,12 @@ def boxcar(psf, image_file, graph=0) :
                             If not and set to an int > 0, will show a graph
                             of the spectrum.
         """
-    nfibers = 50
-#    psf     = pyfits.open(file_1)
+    nfibers = 500
     wavemin = psf[0].header["WAVEMIN"]
     wavemax = psf[0].header["WAVEMAX"]
     xcoef   = psf[0].data
     ycoef   = psf[1].data
     xsig    = psf[2].data
-#    image_file  = pyfits.open(file_2)
     flux        = image_file[0].data
     flux_ivar   = image_file[1].data
     flux_var    = np.zeros(flux_ivar.shape)

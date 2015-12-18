@@ -1,6 +1,5 @@
 import numpy as np
 import astropy.io.fits as pyfits
-import pylab
 from numpy.polynomial.legendre import legval, legfit
 
 def u(wave, wavemin, wavemax) :
@@ -10,8 +9,8 @@ def u(wave, wavemin, wavemax) :
 #   RETURNS FITS FILE INCLUDING ELECTRONS QUANTITY
 ################
 
-def boxcar(psf, image_file, graph=0, nfibers=500) :
-    """Find and returns a fits file thanks to an input wavelength and spectrum
+def boxcar(psf, image_file, nfibers=None) :
+    """Find and returns  wavelength  spectra and inverse variance
 
         Parameters
         ----------
@@ -21,12 +20,15 @@ def boxcar(psf, image_file, graph=0, nfibers=500) :
         pix     : File Descriptor
         Interpreted photons using the wavelength.
 
-        graph   : Optional. If left empty, will return a fits file.
-                            If not and set to an int > 0, will show a graph
-                            of the spectrum.
+        
 
         nfibers : Optional. If left empty, will set the max number of fibers.
                             Max number is 500
+
+        Returns
+        spectra
+        ivar
+        wavelength
         """
     wavemin = psf[0].header["WAVEMIN"]
     wavemax = psf[0].header["WAVEMAX"]
@@ -49,18 +51,25 @@ def boxcar(psf, image_file, graph=0, nfibers=500) :
     npix_x  = flux.shape[1]
     wave    = np.linspace(wavemin, wavemax, 10)
 
+    nfibers_to_extract = xcoef.shape[0]
+    if nfibers is not None :
+        if nfibers>nfibers_to_extract :
+            print "WARNING only %d fibers will be extracted"%nfibers_to_extract
+        nfibers_to_extract = min(nfibers,nfibers_to_extract)
+    
+
     #   Flux as a function of wavelength
-    spectra             = np.zeros((nfibers,npix_y))
+    spectra             = np.zeros((nfibers_to_extract,npix_y))
     #   Inverse-variance of spectrum
-    spectra_ivar        = np.zeros((nfibers,npix_y))
+    spectra_ivar        = np.zeros((nfibers_to_extract,npix_y))
     #   Wavelength
-    wave_of_y           = np.zeros((nfibers, npix_y))
+    wave_of_y           = np.zeros((nfibers_to_extract, npix_y))
 
 ###
 # Using legendre's polynomial to get a spectrum per fiber
 ###
 
-    for fiber in xrange(nfibers) :
+    for fiber in xrange(nfibers_to_extract) :
         print fiber
         #   Determines value of Y, so we can know its coeficient and then its position
         y_of_wave           = legval(u(wave, wavemin, wavemax), ycoef[fiber])
@@ -81,18 +90,9 @@ def boxcar(psf, image_file, graph=0, nfibers=500) :
                 var                 = np.sum(flux_var[y, x1_of_y[y]:x2_of_y[y]])
                 #   Spectrum of inverse variance
                 spectra_ivar[fiber, y] = 1./var
-        if graph :
-            pylab.plot(spectra[fiber])
+        
 
-    if graph == 0 :
-        hdulist=pyfits.HDUList([pyfits.PrimaryHDU(spectra),
-                                pyfits.ImageHDU(spectra_ivar,name="IVAR"),
-                                pyfits.ImageHDU(wave_of_y,name="WAVELENGTH")])
-                                #pyfits.ImageHDU(rdata, name="RESOLUTION")])
-        hdulist.writeto("frame.fits",clobber=True)
-        # hdulist[0]: Spectra
-        # hdulist[1]: Inverse variance of spectra
-        # hdulist[2]: Wavelengh
-        # hdulist[3]: Resolution matrix
-    else :
-        pylab.show()
+    
+    return spectra,spectra_ivar,wave_of_y
+
+

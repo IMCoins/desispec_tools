@@ -2,7 +2,8 @@
 
 import argparse
 import astropy.io.fits as pyfits
-from desispec_tools.boxcar_extraction import boxcar
+from boxcar_extraction import boxcar
+from graphic_extraction import show_graph
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-p','--psf', type = str, default = None, required = True,
@@ -20,11 +21,15 @@ args = parser.parse_args()
 psf         = pyfits.open(args.psf)
 image_file  = pyfits.open(args.image)
 
-spectra,ivar,wave = boxcar(psf,image_file,args.nfibers)
+spectra, ivar, wave = boxcar(psf,image_file,args.nfibers)
+#boxcar(psf,image_file,args.nfibers)
 
-hdulist=pyfits.HDUList([pyfits.PrimaryHDU(spectra),
+hdulist = pyfits.HDUList([pyfits.PrimaryHDU(spectra),
                         pyfits.ImageHDU(ivar,name="IVAR"),
                         pyfits.ImageHDU(wave,name="WAVELENGTH")])
-                                #pyfits.ImageHDU(rdata, name="RESOLUTION")])
+                        #pyfits.ImageHDU(rdata, name="RESOLUTION")])
 hdulist.writeto(args.outframe,clobber=True)
 
+frame       = pyfits.open(args.outframe)
+
+show_graph(frame)

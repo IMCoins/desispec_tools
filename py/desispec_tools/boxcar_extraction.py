@@ -1,7 +1,6 @@
-import pylab
 import numpy as np
-import astropy.io.fits as pyfits
 from numpy.polynomial.legendre import legval, legfit
+
 #from desispec.log import get_logger
 
 ################

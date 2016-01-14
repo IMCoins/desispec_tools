@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.polynomial.legendre import legval, legfit
 
-#from desispec.log import get_logger
+from desispec.log import get_logger
 
 ################
 #   RETURNS FITS FILE INCLUDING ELECTRONS QUANTITY
@@ -29,8 +29,8 @@ def boxcar(psf, image_file, nfibers=None) :
         spectra, ivar, wavelength
 
         """
-#    log=get_logger()
-#    log.info("starting boxcar extraction")
+    log=get_logger()
+    log.info("Starting boxcar extraction...")
     
     wavemin = psf[0].header["WAVEMIN"]
     wavemax = psf[0].header["WAVEMAX"]
@@ -57,8 +57,7 @@ def boxcar(psf, image_file, nfibers=None) :
     nfibers_to_extract = xcoef.shape[0]
     if nfibers is not None :
         if nfibers > nfibers_to_extract :
-#           log.warning("only %d fibers will be extracted" % nfibers_to_extract)
-            print 'WARNING'
+           log.warning("only %d fibers will be extracted" % nfibers_to_extract)
         nfibers_to_extract = min(nfibers,nfibers_to_extract)
     
     #   Flux as a function of wavelength
@@ -73,8 +72,7 @@ def boxcar(psf, image_file, nfibers=None) :
 ###
 
     for fiber in xrange(nfibers_to_extract) :
-#        log.info("extracting fiber #%03d"%fiber)
-        print fiber
+        log.info("extracting fiber #%03d"%fiber)
         x1_of_y, x2_of_y = invert_legendre_polynomial(wavemin, wavemax, ycoef, xcoef, fiber, npix_y, wave_of_y)
         for y in xrange(npix_y) :
             #   Checking if there's a dead pixel
@@ -87,7 +85,7 @@ def boxcar(psf, image_file, nfibers=None) :
                 #   Spectrum of inverse variance
                 spectra_ivar[fiber, y] = 1./var
 
-#   log.info("Boxcar extraction complete")
+    log.info("Boxcar extraction complete")
     return spectra, spectra_ivar, wave_of_y
 
 def u(wave, wavemin, wavemax) :

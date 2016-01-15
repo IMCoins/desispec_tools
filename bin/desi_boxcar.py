@@ -33,7 +33,7 @@ spectra, ivar, wave = boxcar(psf, image_file, args.nfibers)
 
 if args.resample :
     log.info("Starting resampling...")
-    spectra, ivar, wave = resample_to_same_wavelenght_grid(spectra, ivar, wave)
+    spectra, ivar, wave = resample_to_same_wavelength_grid(spectra, ivar, wave)
     log.info("Data resampled.")
 
 hdulist = pyfits.HDUList([pyfits.PrimaryHDU(spectra),

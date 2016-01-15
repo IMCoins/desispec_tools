@@ -10,7 +10,7 @@ def show_graph() :
     """
     pylab.show()
 
-def plot_graph(frame, nfibers=None, start=0, end=None, only=False) :
+def plot_graph(frame, nfibers=None, start=0, end=None, only=False, opt_err=False, opt_2d=False) :
     """Plot graph from a given spectra from a fits file.
 
     ----------
@@ -52,12 +52,11 @@ def plot_graph(frame, nfibers=None, start=0, end=None, only=False) :
     # err = np.sqrt(1./(ivar+(ivar==0)))*(ivar>0)
     
     if only == True :
-        end = start
+        end = start + 1
 
     for fiber in xrange(start, end) :
         log.info("Plotting fiber %03d" % fiber)
-        show_errors = False
-        if show_errors :
+        if opt_err :
             err = np.sqrt(1./ (ivar + (ivar == 0))) * (ivar > 0)
             if len(wave.shape) > 1 :
                 pylab.errorbar(wave[fiber], spectra[fiber], err[fiber], fmt="o-")
@@ -71,14 +70,14 @@ def plot_graph(frame, nfibers=None, start=0, end=None, only=False) :
     
     pylab.xlabel("Wavelength [A]")
 
-    show_2d = False
-    if show_2d :
+    if opt_2d :
         pylab.figure()
         if len(wave.shape) == 1 :
             # print wave[0],wave[-1],start-0.5,end-0.5
             # print spectra[start:end].shape
             pylab.imshow(spectra[start:end],
-                        aspect = spectra.shape[1] / float(end - start),
+                        # aspect = spectra.shape[1] / float(end - start),
+                        aspect = 'auto',
                         extent = (wave[0], wave[-1], start - 0.5, end - 0.5),
                         origin = 0.,
                         interpolation = "nearest")
@@ -86,7 +85,8 @@ def plot_graph(frame, nfibers=None, start=0, end=None, only=False) :
             pylab.ylabel("Fiber #")
         else :
             pylab.imshow(spectra[start:end],
-                        aspect = spectra.shape[1] / float(end - start),
+                        # aspect = spectra.shape[1] / float(end - start),
+                        aspect = 'auto',
                         extent = (0,spectra.shape[1],start-0.5,end-0.5),
                         origin = 0.,
                         interpolation = "nearest")

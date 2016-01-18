@@ -4,6 +4,7 @@ import argparse
 import astropy.io.fits as pyfits
 
 from desispec_tools.boxcar_extraction   import boxcar
+from desispec_tools.profile_extraction  import profile_extraction 
 from desispec_tools.resample            import resample_to_same_wavelength_grid
 from desispec_tools.graph_tools         import plot_graph
 from desispec.log                       import get_logger
@@ -19,6 +20,8 @@ parser.add_argument('-n','--nfibers', type = int, default = None, required = Fal
                     help = 'number of fibers (default=all)')
 parser.add_argument('--show', action='store_true',
                     help = 'plot result')
+parser.add_argument('--prof', action='store_true',
+                    help = 'profile extraction')
 parser.add_argument('-r','--resample', action='store_true',
                     help = 'resample to save wavelength grid')
 parser.add_argument('--plot', type=str,
@@ -29,7 +32,10 @@ args        = parser.parse_args()
 psf         = pyfits.open(args.psf)
 image_file  = pyfits.open(args.image)
 
-spectra, ivar, wave = boxcar(psf, image_file, args.nfibers)
+if args.prof :
+    spectra, ivar, wave = profile_extraction(psf, image_file, args.nfibers)
+else :
+    spectra, ivar, wave = boxcar(psf, image_file, args.nfibers)
 
 if args.resample :
     log.info("Starting resampling...")

@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.polynomial.legendre import legval, legfit
-
+from desispec_tools.utils import invert_legendre_polynomial
 from desispec.log import get_logger
 
 ################
@@ -73,7 +73,12 @@ def boxcar(psf, image_file, nfibers=None) :
 
     for fiber in xrange(nfibers_to_extract) :
         log.info("extracting fiber #%03d"%fiber)
-        x1_of_y, x2_of_y = invert_legendre_polynomial(wavemin, wavemax, ycoef, xcoef, fiber, npix_y, wave_of_y)
+        # inversion to get x coordinate of trace given y
+        x_of_y = invert_legendre_polynomial(wavemin, wavemax, ycoef, xcoef, fiber, npix_y, wave_of_y)
+        # range of x
+        x1_of_y             = np.floor(x_of_y).astype(int) - 3
+        x2_of_y             = np.floor(x_of_y).astype(int) + 4
+        
         for y in xrange(npix_y) :
             #   Checking if there's a dead pixel
             nb_invalidPix   = np.sum(flux_ivar[y, x1_of_y[y]:x2_of_y[y]] <= 0)
@@ -88,24 +93,3 @@ def boxcar(psf, image_file, nfibers=None) :
     log.info("Boxcar extraction complete")
     return spectra, spectra_ivar, wave_of_y
 
-def u(wave, wavemin, wavemax) :
-    return 2. * (wave - wavemin)/(wavemax - wavemin) - 1.
-
-def invert_legendre_polynomial(wavemin, wavemax, ycoef, xcoef, fiber, npix_y, wave_of_y) :
- 
-    #   Wavelength array used in 'invert_legendre_polynomial'
-    wave                = np.linspace(wavemin, wavemax, 100)
-    #   Determines value of Y, so we can know its coeficient and then its position
-    y_of_wave           = legval(u(wave, wavemin, wavemax), ycoef[fiber])
-    coef                = legfit(u(y_of_wave, 0, npix_y), wave, deg=ycoef[fiber].size)
-    wave_of_y[fiber]    = legval(u(np.arange(npix_y).astype(float), 0, npix_y), coef)
-    #   Determines wavelength intensity (x) based on Y
-    x_of_y              = legval(u(wave_of_y[fiber], wavemin, wavemax), xcoef[fiber])
-    #   Ascertain X by using low and high uncertainty
-    x1_of_y             = np.floor(x_of_y).astype(int) - 3
-    x2_of_y             = np.floor(x_of_y).astype(int) + 4
-    return (x1_of_y, x2_of_y)
-
-    #   comment for : invert_legendre_polynomial
-    #   prefered input    = xmin, xmax, coef_of_x_to_y    |   TO BE
-    #   prefered output   = ymin, ymax, coef_of_y_to_x    |   SEEN
